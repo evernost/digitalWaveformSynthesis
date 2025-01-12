@@ -2,7 +2,7 @@
 % Project       : digitalWaveformSynthesis
 % Module name   : oscSquare
 % File name     : oscSquare.m
-% Purpose       : study 1 - the naive approach in synthesis
+% Purpose       : rectangular wave generator
 % Author        : QuBi (nitrogenium@hotmail.com)
 % Creation date : Saturday, 11 January 2025
 % -----------------------------------------------------------------------------
@@ -10,19 +10,19 @@
 % =============================================================================
 %
 % Description:
-% Generates a 'naive' square wave.
-% Output is normalized with 0 mean and unity power.
+% Generates a 'naive' rectangular wave (not suited for audio generation)
+% Output is normalised with 0 mean and unity power.
 %
 % Arguments:
 % - t     [nPts*1]  : time vector
 % - duty  [1*1]     : duty cycle ratio, between 0 and 1
 % - f     [1*1]     : frequency
-% - fs    [1*1]     : sampling frequency
 %
 % Outputs:
 % - s     [nPts*1]  : square wave output
 % - brk   [nBrk*1]  : list of indexes where the signal toggles at the next
 %                     sample.
+%
 
 
 

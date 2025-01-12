@@ -19,12 +19,14 @@ clear all
 
 tSim = 1.0;
 fs = 48000;
-fftSize = 1024;
+fftSize = 32768;
 
 nPts = round(tSim*fs);
 t = (0:(nPts-1))'/fs;
 
-[s, brk] = oscSquare(t, 0.1, 440);
+[s, brk] = oscSquare(t, 0.5, 440);
+%s = sin(2*pi*440*t);
+spectrumAnalyser(s, fftSize, fftSize/4)
 
-plot(t,s)
-grid minor
+% plot(t,s)
+% grid minor
