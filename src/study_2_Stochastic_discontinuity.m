@@ -1,17 +1,13 @@
 % =============================================================================
 % Project       : digitalWaveformSynthesis
 % Module name   : N/A
-% File name     : study_1_Naive_approach.m
-% Purpose       : study 1 - the naive approach in synthesis
+% File name     : study_2_Stochastic_discontinuity.m
+% Purpose       : study 2 - use noise to announce the discontinuity
 % Author        : QuBi (nitrogenium@hotmail.com)
-% Creation date : Saturday, 11 January 2025
+% Creation date : Monday, 20 January 2025
 % -----------------------------------------------------------------------------
 % Best viewed with space indentation (2 spaces)
 % =============================================================================
-
-% PURPOSE
-% Demonstrate the impact of various kinds of discontinuities on the
-% spectrum.
 
 clc
 close all
