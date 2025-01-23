@@ -10,8 +10,9 @@
 % =============================================================================
 
 % PURPOSE
-% Demonstrate the impact of various kinds of discontinuities on the
-% spectrum.
+% Demonstrate how a lack of caution while trying to synthesise some typical
+% 'synth' waveforms (square, sawtooth, etc.) digitally can lead to some
+% nasty results.
 
 clc
 close all
@@ -33,14 +34,7 @@ t = (0:(nPts-1))'/fs;
 % Calibrated sinewave
 s = sin(2*pi*1000*t) + 0.5*randn(nPts,1);
 
-% sMod = s;
-% for n = 1:length(brk)
-%   b = brk(n);
-%   sMod(b-2) = sMod(b-2) + (-0.5 + (0.5 + 0.5)*rand);
-%   sMod(b-1) = sMod(b-1) + (-1   + (1   + 1  )*rand);
-%   sMod(b  ) = sMod(b  ) + (-1   + (1   + 1  )*rand);
-%   sMod(b+1) = sMod(b+1) + (-1   + (1   + 1  )*rand);
-% end
+
 
 figure
 spectrumAnalyser(s, fftSize, fftSize/4)

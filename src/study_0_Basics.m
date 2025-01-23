@@ -9,18 +9,27 @@
 % Best viewed with space indentation (2 spaces)
 % =============================================================================
 
+% PURPOSE
+% Provide some justifications for DSP basics that will be used throughout
+% the scripts.
+
 clc
 close all
 clear all
 
 % =============================================================================
-% ANNEX 1: statistics of each bin in the Power Density Spectrum
+% ANNEX 1: statistics of each bin in the PSD of a Gaussian white noise
 % =============================================================================
 % TODO
 
 
+% dsp = spectrumAnalyser(
+% Lindeberg condition
+% ...
+
+
 % =============================================================================
-% ANNEX 2: build a calibrated sinewave
+% ANNEX 2: build a calibrated 0dB sinewave with -80 dB noise floor
 % =============================================================================
 
 % TODO 

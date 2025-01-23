@@ -26,7 +26,7 @@
 
 
 
-function spectrumAnalyser(s, fftSize, hopSize)
+function dsp = spectrumAnalyser(s, fftSize, hopSize)
   
   nPts = size(s,1);
   nFrm = ceil(1 + ((nPts-fftSize)/hopSize));
@@ -41,10 +41,9 @@ function spectrumAnalyser(s, fftSize, hopSize)
   end
   
   sFFT = fft(sBrk)/fftSize;
-  sp = 20*log10(sum(abs(sFFT(1:fftSize/2,:)), 2)/nFrm);
-  %semilogx(sp)
-  plot(sp)
+  dsp = 20*log10(sum(abs(sFFT(1:fftSize/2,:)), 2)/nFrm);
+  %semilogx(dsp)
+  plot(dsp)
   grid minor
-
 end
 
