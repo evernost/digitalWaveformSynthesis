@@ -3,7 +3,7 @@
 % Module name   : oscSquare
 % File name     : oscSquare.m
 % Purpose       : rectangular wave generator
-% Author        : QuBi (nitrogenium@hotmail.com)
+% Author        : QuBi (nitrogenium@outlook.fr)
 % Creation date : Saturday, 11 January 2025
 % -----------------------------------------------------------------------------
 % Best viewed with space indentation (2 spaces)

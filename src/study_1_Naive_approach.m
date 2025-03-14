@@ -3,7 +3,7 @@
 % Module name   : N/A
 % File name     : study_1_Naive_approach.m
 % Purpose       : study 1 - the naive approach in synthesis
-% Author        : QuBi (nitrogenium@hotmail.com)
+% Author        : QuBi (nitrogenium@outlook.fr)
 % Creation date : Saturday, 11 January 2025
 % -----------------------------------------------------------------------------
 % Best viewed with space indentation (2 spaces)
