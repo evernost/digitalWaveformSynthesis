@@ -29,77 +29,59 @@ close all
 clear all
 
 FFT_SIZE = 262144;
-N_TRIES = 100000;
+N_TRIES = 10;
 N_TARGET = 1000;
 W_SIZE = 20;
 
-step = logspace(-1, -4, N_TARGET);
-
-
+step = logspace(-1, -3, N_TARGET);
 
 [x, brk, brkFine] = genericRectWave(10000, 1000.1, 0.5);
 nBrk = length(brk);
 
 eMax = Inf;
-delta = zeros(2*W_SIZE+1, 5);
 n = 0;
 while (n < N_TARGET)
   
-  xMod = x;
-  delta = step(n+1)*(-1 + 2*rand(2*W_SIZE+1, 5));
-  for b = 1:nBrk-1
-    if (brkFine(b) < 0.2)
-      xMod((brk(b)-W_SIZE):(brk(b)+W_SIZE)) = x((brk(b)-W_SIZE):(brk(b)+W_SIZE)) + delta(:,1);
-    
-    elseif (brkFine(b) >= 0.2) && (brkFine(b) < 0.4)
-      xMod((brk(b)-W_SIZE):(brk(b)+W_SIZE)) = x((brk(b)-W_SIZE):(brk(b)+W_SIZE)) + delta(:,2);
-    
-    elseif (brkFine(b) >= 0.4) && (brkFine(b) < 0.6)
-      xMod((brk(b)-W_SIZE):(brk(b)+W_SIZE)) = x((brk(b)-W_SIZE):(brk(b)+W_SIZE)) + delta(:,3);
-      
-    elseif (brkFine(b) >= 0.6) && (brkFine(b) < 0.8)
-      xMod((brk(b)-W_SIZE):(brk(b)+W_SIZE)) = x((brk(b)-W_SIZE):(brk(b)+W_SIZE)) + delta(:,4);
-      
-    else
-      xMod((brk(b)-W_SIZE):(brk(b)+W_SIZE)) = x((brk(b)-W_SIZE):(brk(b)+W_SIZE)) + delta(:,5);
-    end
-  end
+  xMod = repmat(x, 1, N_TRIES);
+ 
+  % Draw a random transition
+  idx = randi([1,nBrk-1]);
+
+  % Draw random wiggles
+  delta = step(n+1)*(-1 + 2*rand(2*W_SIZE+1, N_TRIES));
+  
+  % Apply the wiggles to the neighborhood of the selected transition
+  a = brk(idx) - W_SIZE;
+  b = brk(idx) + W_SIZE;
+  xMod(a:b, :) = x(a:b, :) + delta;
   
   % Evaluate spectrum
-  %s = 20*log10(abs(fft(x, 262144)));
   s = abs(fft(xMod, 262144));
-  sHalf = s(1:FFT_SIZE/2);
+  sHalf = s(1:FFT_SIZE/2, :);
 
-  % Investigate peaks
-  % sBefore = sHalf(1:(end-2));
-  % sMiddle = sHalf(2:(end-1));
-  % sAfter  = sHalf(3:end);
-  % sTest = ((sMiddle > sBefore) & (sMiddle > sAfter));
-  % peakLoc = find(sTest)+1;
-  % peakVal = sHalf(peakLoc);
+  % Evaluate error
+  % TODO: target the aliased harmonics specifically
+  sSub = sHalf(60000:end, :);
+  e = sum(abs(sSub), 1);
+  [eMin, eMinIndex] = min(e);
 
-  % [B, I] = sort(peakVal, 'descend');
-
-  %e = sum(sHalf(59627:524:end));
-  met = sHalf(60000:end);
-  %e = sum(met.^2);
-  e = max(met);
-  if (e < eMax)
-    fprintf('[INFO] e = %0.2f\n', e)
-    eMax = e;
-    x = xMod;
+  if eMin < eMax
+    %fprintf('[INFO] e = %0.2f\n', e)
+    eMax = eMin;
+    x = xMod(:,eMinIndex);
     n = n + 1;
     
     %subplot(1,2,1)
-    plot(20*log10(sHalf))
+    plot(20*log10(sHalf(:,eMinIndex)))
     grid minor
     ylim([-80 80])
+    title(sprintf('Solution %d/%d', n, N_TARGET))
 
     %subplot(1,2,2)
     %plot(xMod)
     %xlim([485 515])
 
-    pause(0.001)
+    pause(0.00001)
   end
 
 end
