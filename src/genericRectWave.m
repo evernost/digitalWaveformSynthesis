@@ -48,16 +48,11 @@ function [s, brk, brkFine] = genericRectWave(nPts, period, dutyRatio, highLevels
       state = -1;
     end
   
-    fprintf('[INFO] Populating from %d to %d\n', brkLast+1, floor(t))
+    %fprintf('[INFO] Populating from %d to %d\n', brkLast+1, floor(t))
 
     brk = [brk; floor(t)];
     brkLast = floor(t);
     brkFine = [brkFine; t-floor(t)];
     brkCount = brkCount + 1;
- 
-  
-  
   end
-  
-  
 end
