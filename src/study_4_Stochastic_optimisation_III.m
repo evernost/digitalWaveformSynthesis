@@ -24,13 +24,15 @@ close all
 % SETTINGS
 % =============================================================================
 FS = 48000;
+F0 = 110;
 N_PTS = 10000;
+N_PEAKS = 400;
 
 FFT_SIZE = 262144;
 N_TRIES = 10;
-N_TARGET = 1000;
-W_SIZE = 64;
-W_SUB_SIZE = 16;
+N_TARGET = 10000;
+W_SIZE = 32;
+W_SUB_SIZE = 8;
 
 
 
@@ -40,11 +42,31 @@ W_SUB_SIZE = 16;
 % Build the Haar matrix
 H = genHaar(W_SIZE);
 
-step = logspace(0.2, -3, N_TARGET);
-
+% Generate signal
 t = (0:(N_PTS-1))'/FS;
-[x, brk] = oscSquare(t, 0.5, 110);
+[x, brk] = oscSquare(t, 0.5, F0);
 nBrk = length(brk);
+
+% Define steps
+step = logspace(0, -6, N_TARGET);
+
+% Calculate peak locations
+peaksLoc = zeros(N_PEAKS, 1);
+for n = 1:N_PEAKS
+  u = (2*n-1)*F0*FFT_SIZE/FS;
+  
+  while ((u > 131072) || (u < 0))
+    if (u > 131072)
+      u = 262144 - u;
+    end
+
+    if (u < 0)
+      u = -u;
+    end
+  end
+  
+  peaksLoc(n) = u;
+end
 
 eMax = Inf;
 n = 0;
@@ -69,12 +91,15 @@ while (n < N_TARGET)
   sHalf = s(1:FFT_SIZE/2, :);
 
   % Evaluate error
-  % TODO: target the aliased harmonics specifically
-  sSub = sHalf(60000:end, :);
-  %e = sum(abs(sSub), 1);
-  e = sum(sSub.^2, 1);
+  %sSub = sHalf(60000:end, :);
+  subPeakIndex = round(peaksLoc(110:400))+1;
+  sHalfAtSubPeaks = sHalf(subPeakIndex, :);
+  e = sum(sHalfAtSubPeaks.^2);
+  %e = sum(abs(sHalfAtSubPeaks));
+  
   [eMin, eMinIndex] = min(e);
 
+  %if eMin < 0.995*eMax
   if eMin < eMax
     %fprintf('[INFO] e = %0.2f\n', e)
     eMax = eMin;
@@ -82,7 +107,8 @@ while (n < N_TARGET)
     n = n + 1;
     
     %subplot(1,2,1)
-    plot(20*log10(sHalf(:,eMinIndex)))
+    fPlot = (0:((FFT_SIZE/2)-1))';
+    plot(fPlot, 20*log10(sHalf(:,eMinIndex)), peaksLoc(110:400), 20*log10(sHalfAtSubPeaks(:,eMinIndex)), 'r+')
     grid minor
     ylim([-80 80])
     title(sprintf('Solution %d/%d', n, N_TARGET))

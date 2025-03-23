@@ -22,7 +22,7 @@ close all
 % SETTINGS
 % =============================================================================
 N_PTS = 10000;
-N0 = 345;
+N_BRK = 1;
 FFT_SIZE = 262144;
 FS = 48000;
 F0 = 100.6;
@@ -37,7 +37,10 @@ t = (0:(N_PTS-1))'/FS;
 phi = 2*pi*F0*t;
 x = sin(phi);
 
-phi(N0:end) = phi(N0:end) - 10;
+brkLoc = randperm(N_PTS, N_BRK);
+for n = 1:N_BRK
+  phi(brkLoc(n):end) = phi(brkLoc(n):end) - 10*pi*rand;
+end
 xBrk = sin(phi);
 
 
