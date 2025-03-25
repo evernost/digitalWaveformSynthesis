@@ -24,9 +24,9 @@
 
 
 
-function s = impulseOsc(f, fs, h)
+function s = impulseOsc(nPts, f, fs, h)
 
-  nPts = size(t,1);
+  hSize = length(h);
   s = zeros(nPts,1);
   
   t = 0;
@@ -34,15 +34,17 @@ function s = impulseOsc(f, fs, h)
   while (n < nPts)
     n = ceil(t*fs);
 
+    % Read location in the look-up table (might be not an integer)
     aRead = ceil(t*fs) - (t*fs);
-    bRead = ceil(t*fs) - (t*fs) + size(h) - 1;
+    bRead = floor(aRead + hSize - 1);
 
-    aWrite = n;
-    bWrite = min(n + size(h), nPts);
+    % Write location in the signal (must be an integer)
+    aWrite = ceil(t*fs) + 1;
+    bWrite = floor(t*fs + hSize - 1) + 1;
+
+    s(aWrite:bWrite) = interp1((0:(hSize-1))', h, (aRead:bRead)');
 
     t = t + (1/f);
   end
-  
-  
 end
 

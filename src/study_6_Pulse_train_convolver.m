@@ -50,4 +50,4 @@ t = (0:(N_PTS-1))'/FS;
 h = exp(-6*(0:(H_SIZE-1))'/H_SIZE);
 %plot((0:(H_SIZE-1))', h)
 
-s = impulseOsc(t, F0, FS, h);
+s = impulseOsc(N_PTS, F0, FS, h);
