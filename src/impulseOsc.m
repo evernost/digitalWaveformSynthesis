@@ -10,7 +10,7 @@
 % =============================================================================
 %
 % DESCRIPTION
-% Generates the equivalent of 
+% Oscillator based on an impulse response positioned at every period.
 %
 % Arguments:
 % - t     [nPts*1]  : time vector
@@ -24,17 +24,19 @@
 
 
 
-function s = impulseOsc(nPts, f, fs, h)
+function s = impulseOsc(nPts, f, fs, h, amp)
 
   hSize = length(h);
   s = zeros(nPts,1);
   
   t = 0;
   n = 0;
+  sizeAmp = length(amp);
+  nAmp = 1;
   while (n < nPts)
     n = ceil(t*fs);
 
-    % Read location in the look-up table (might be not an integer)
+    % Read location in the look-up table (might not be an integer)
     aRead = ceil(t*fs) - (t*fs);
     bRead = floor(aRead + hSize - 1);
 
@@ -42,9 +44,18 @@ function s = impulseOsc(nPts, f, fs, h)
     aWrite = ceil(t*fs) + 1;
     bWrite = floor(t*fs + hSize - 1) + 1;
 
-    s(aWrite:bWrite) = interp1((0:(hSize-1))', h, (aRead:bRead)');
+    s_h = amp(nAmp)*interp1((0:(hSize-1))', h, (aRead:bRead)');
+
+    nMax = min(bWrite, nPts);
+    s(aWrite:nMax) = s(aWrite:nMax) + s_h(1:(nMax-aWrite+1));
 
     t = t + (1/f);
+
+    if (nAmp == sizeAmp)
+      nAmp = 1;
+    else
+      nAmp = nAmp + 1;
+    end
   end
 end
 

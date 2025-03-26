@@ -26,11 +26,11 @@ F0 = 110;
 
 N_PTS = 10000;
 
-H_SIZE = 30;
+H_SIZE = 200;
 
 FFT_SIZE = 262144;
 
-ORBIT_SIZE = 4;
+ORBIT_SIZE = 1;
 
 
 % =============================================================================
@@ -47,7 +47,20 @@ end
 t = (0:(N_PTS-1))'/FS;
 
 % Impulse response
-h = exp(-6*(0:(H_SIZE-1))'/H_SIZE);
+t_h = (0:(H_SIZE-1))'/H_SIZE;
+h = exp(-6*(0:(H_SIZE-1))'/H_SIZE).*sin(2*pi*2*t_h);
 %plot((0:(H_SIZE-1))', h)
 
-s = impulseOsc(N_PTS, F0, FS, h);
+x = impulseOsc(N_PTS, F0, FS, h, orbit);
+plot(x)
+grid minor
+
+
+s = abs(fft(x,FFT_SIZE));
+s = s(1:(FFT_SIZE/2));
+
+figure
+plot(20*log10(s))
+
+
+
