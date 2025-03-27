@@ -11,7 +11,18 @@
 % =============================================================================
 
 % PURPOSE
-% TODO!
+% Extend the idea of rectangular wave generation for a deeper study on the 
+% aliasing issues.
+%
+% This scripts generates a signal that plays an impulse response at every
+% period, then it is time sampled. 
+% Like rectangular waves, time sampling will cause aliasing.
+%
+% The goal of the study is to see if some impulse response minimise the aliasing
+% components.
+% 
+% Any interesting result observed here will have direct consequences on the 
+% study on polynomial recursions.
 
 clc
 close all
@@ -22,45 +33,71 @@ close all
 % SETTINGS
 % =============================================================================
 FS = 48000;
-F0 = 110;
+F0 = 301;
 
 N_PTS = 10000;
 
 H_SIZE = 200;
 
 FFT_SIZE = 262144;
+N_PEAKS = 140;
 
-ORBIT_SIZE = 1;
 
 
 % =============================================================================
 % MAIN SCRIPT
 % =============================================================================
 
-% Pick random period
-orbit = ones(ORBIT_SIZE, 1);
-while mean(orbit) > 0.01
-  orbit = -1 + 2*rand(ORBIT_SIZE, 1);
-end
-
 % Time vector
 t = (0:(N_PTS-1))'/FS;
 
-% Impulse response
+% Initial impulse response
 t_h = (0:(H_SIZE-1))'/H_SIZE;
-h = exp(-6*(0:(H_SIZE-1))'/H_SIZE).*sin(2*pi*2*t_h);
-%plot((0:(H_SIZE-1))', h)
+h = exp(-6*(0:(H_SIZE-1))'/H_SIZE).*sin(2*pi*8*t_h);
 
-x = impulseOsc(N_PTS, F0, FS, h, orbit);
+% Determine location of the spectral peaks
+peakLoc = zeros(N_PEAKS, 1);
+firstAlias = true;
+for n = 1:N_PEAKS
+  u = n*F0*FFT_SIZE/FS;
+  
+  while ((u > ((FFT_SIZE/2)-1)) || (u < 0))
+    if (u > ((FFT_SIZE/2)-1))
+      if firstAlias
+        fprintf('[INFO] First aliased peak at index %d\n', n);
+        firstAlias = false;
+      end
+      u = FFT_SIZE-2 - u;
+    end
+
+    if (u < 0)
+      u = -u;
+    end
+  end
+  peakLoc(n) = u;
+end
+
+% Generate signal
+x = impulseOsc(N_PTS, F0, FS, h);
 plot(x)
 grid minor
+
 
 
 s = abs(fft(x,FFT_SIZE));
 s = s(1:(FFT_SIZE/2));
 
+sAtPeak = s(round(peakLoc)+1);
+
 figure
-plot(20*log10(s))
+sFreq = (0:((FFT_SIZE/2)-1)).';
+plot(sFreq, 20*log10(s), peakLoc, 20*log10(sAtPeak), 'r+')
+grid minor
+
+
+
+
+
 
 
 

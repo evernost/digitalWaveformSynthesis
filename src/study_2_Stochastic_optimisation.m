@@ -31,11 +31,11 @@ clear all
 FFT_SIZE = 262144;
 N_TRIES = 10;
 N_TARGET = 1000;
-W_SIZE = 20;
+W_SIZE = 10;
 
-step = logspace(-1, -3, N_TARGET);
+step = logspace(-0.1, -3, N_TARGET);
 
-[x, brk, brkFine] = genericRectWave(10000, 1000.1, 0.5);
+[x, brk, brkFine] = genericRectWave(10000, 1000.6, 0.5);
 nBrk = length(brk);
 
 eMax = Inf;
@@ -62,7 +62,8 @@ while (n < N_TARGET)
   % Evaluate error
   % TODO: target the aliased harmonics specifically
   sSub = sHalf(60000:end, :);
-  e = sum(abs(sSub), 1);
+  %e = sum(abs(sSub), 1);
+  e = sum(sSub.^2, 1);
   [eMin, eMinIndex] = min(e);
 
   if eMin < eMax
