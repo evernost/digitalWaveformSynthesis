@@ -23,23 +23,31 @@ close all
 % =============================================================================
 % SETTINGS
 % =============================================================================
-FS = 48000;
-F0 = 110;
-N_PTS = 10000;
-N_PEAKS = 400;
 
-FFT_SIZE = 262144;
-N_TRIES = 10;
-N_TARGET = 10000;
+% Signal properties
+FS = 48000;
+F0 = 101;
+N_PTS = 50000;
+
+% Haar basis settings
 W_SIZE = 32;
 W_SUB_SIZE = 8;
 
+% FFT analysis settings
+FFT_SIZE = 262144;
+
+% Number of spectral peaks considered for the iteration
+N_PEAKS = 200;
+
+% Required number of solutions before stopping the script
+N_TARGET = 10000;
+
 
 
 % =============================================================================
-% MAIN SCRIPT
+% PRELIMINARY VARIABLES
 % =============================================================================
-% Build the Haar matrix
+% Generate the Haar matrix
 H = genHaar(W_SIZE);
 
 % Generate signal
@@ -47,86 +55,110 @@ t = (0:(N_PTS-1))'/FS;
 [x, brk] = oscSquare(t, 0.5, F0);
 nBrk = length(brk);
 
-% Define steps
-step = logspace(-5, -6, N_TARGET);
+% Generate the list of step size
+step = logspace(-7, -8, N_TARGET);
 
-% Calculate peak locations
-peaksLoc = zeros(N_PEAKS, 1);
+% Generate the list of expected peak location
+peaksFreq = zeros(N_PEAKS, 1);
+firstAlias = true;
+nAlias = -1;
 for n = 1:N_PEAKS
   u = (2*n-1)*F0*FFT_SIZE/FS;
   
-  while ((u > 131072) || (u < 0))
-    if (u > 131072)
-      u = 262144 - u;
+  while ((u > ((FFT_SIZE/2)-1)) || (u < 0))
+    if (u > ((FFT_SIZE/2)-1))
+      if firstAlias
+        fprintf('[INFO] First aliased peak at index %d.\n', n);
+        firstAlias = false;
+        nAlias = n;
+      end
+      u = FFT_SIZE-2 - u;
     end
 
     if (u < 0)
       u = -u;
     end
   end
-  peaksLoc(n) = u;
+  peaksFreq(n) = u;
+end
+peaksIndices = round(peaksFreq)+1;
+
+if (nAlias == -1)
+  error('[ERROR] INVALID SETTING: please set ''N_PEAKS'' to a large enough value to capture spectral peaks in the aliased domain.')
 end
 
+% Generate the reference spectrum
+s = abs(fft(x, FFT_SIZE));
+sRef = s(1:(FFT_SIZE/2), :);
 
-sTmp = abs(fft(x, 262144));
-sRef = sTmp(1:FFT_SIZE/2, :);
+% Calculate the energy reference
+sigEnerg = sum(x.^2);
 
-sHalfAtSubPeaksMin = 1000*ones(091,1);
+rangeUAS = 1:nAlias;
+rangeAS = (nAlias+1):N_PEAKS;
+
+
+
+% =============================================================================
+% ITERATIVE CONSTRUCTION
+% =============================================================================
 eMax = Inf;
 n = 0;
+figure('units','normalized','outerposition',[0 0 1 1])
 while (n < N_TARGET)
-  
-  xMod = repmat(x, 1, N_TRIES);
- 
-  % Draw a random transition to tweak 
-  idx = randi([1, nBrk-1]);
 
-  % Draw random a random wiggle
+  % Copy the signal
+  xMod = x;
+
+  % Draw a random wiggle
   delta = (H.')*[step(n+1)*(-1 + 2*rand(W_SUB_SIZE, 1)); zeros(W_SIZE-W_SUB_SIZE, 1)];
   
-  % Apply the wiggle to the neighborhood of the selected transition
+  % Draw a random transition
+  idx = randi([1, nBrk-1]);
+
+  % Apply the wiggle to the neighborhood of the transition
   a = brk(idx) - W_SIZE/2 + 1;
   b = brk(idx) + W_SIZE/2;
-  xMod(a:b, :) = x(a:b, :) + delta;
+  xMod(a:b) = x(a:b) + delta;
   
-  % Evaluate the new spectrum
-  sTmp = abs(fft(xMod, 262144));
-  s = sTmp(1:FFT_SIZE/2, :);
+  % Calculate the new spectrum
+  s = abs(fft(xMod, FFT_SIZE));
+  s = s(1:(FFT_SIZE/2), :);
 
-  % Evaluate non-aliased spectrum
-  peaksUnaliasedIndex = round(peaksLoc(1:109))+1;
-  sAtPeaks = s(peaksUnaliasedIndex, :);
-  sHalfAtSubPeaksRef = sHalfRef(subPeakIndex, :);
-  eRef = max(abs(sHalfAtSubPeaks - repmat(sHalfAtSubPeaksRef, 1, N_TRIES)));
-  [~, eRefMinIndex] = min(eRef);
-
-  % Evaluate error
-  subPeakIndex = round(peaksLoc(110:200))+1;
-  sHalfAtSubPeaks = sHalf(subPeakIndex, eRefMinIndex);
-  %e = sum(sHalfAtSubPeaks.^2);
-  %e = sum(abs(sHalfAtSubPeaks));
+  % Calculate amplitude deviation in the non-aliased part of the spectrum (NAS)
+  errNAS = abs(s(peaksIndices(rangeUAS)) - sRef(peaksIndices(rangeUAS)));
   
-  %[eMin, eMinIndex] = min(e);
-
-  %if eMin < 0.995*eMax
-  %if eMin < eMax
-  if all(sHalfAtSubPeaks < sHalfAtSubPeaksMin)
+  % Calculate amplitude deviation in the aliased part of the spectrum (AS)
+  errAS = abs(s(peaksIndices(rangeUAS)) - sRef(peaksIndices(rangeUAS)));
+  
+  % Test the criterias
+  test1 = max(errNAS) < 1e-3;
+  test2 = sum(errAS.^2) < eMax;
+  test3 = sum(xMod.^2) < sigEnerg;
+  test1 = true;
+  %test3 = true;
+  
+  if (test1 && test2 && test3)
+    
+    % Store the new aliased energy
+    eMax = sum(errAS.^2);
     %fprintf('[INFO] e = %0.2f\n', e)
-    %eMax = eMin;
-    sHalfAtSubPeaksMin = sHalfAtSubPeaks;
-    x = xMod(:,eRefMinIndex);
+    
+    % Store the new solution
+    x = xMod;
     n = n + 1;
     
-    %subplot(1,2,1)
+    subplot(1,2,1)
     fPlot = (0:((FFT_SIZE/2)-1))';
-    plot(fPlot, 20*log10(sHalf(:,eRefMinIndex)), peaksLoc(110:200), 20*log10(sHalfAtSubPeaks(:,1)), 'r+')
+    plot(fPlot, 20*log10(s), peaksFreq(rangeUAS), 20*log10(s(peaksIndices(rangeUAS))), 'r+', peaksFreq(rangeAS), 20*log10(s(peaksIndices(rangeAS))), 'k+')
     grid minor
-    ylim([-80 80])
+    ylim([-60 100])
     title(sprintf('Solution %d/%d', n, N_TARGET))
 
-    %subplot(1,2,2)
-    %plot(xMod)
-    %xlim([485 515])
+    subplot(1,2,2)
+    plot(xMod)
+    xlim([0 4000])
+    ylim([-1.2 1.2])
 
     pause(0.00001)
   end

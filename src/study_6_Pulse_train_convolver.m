@@ -24,8 +24,11 @@
 % Any interesting result observed here will have direct consequences on the 
 % study on polynomial recursions.
 
-clc
+
+
+clear all
 close all
+clc
 
 
 
@@ -37,10 +40,12 @@ F0 = 301;
 
 N_PTS = 10000;
 
-H_SIZE = 200;
+H_SIZE = 50;
 
 FFT_SIZE = 262144;
 N_PEAKS = 140;
+
+N_ITER = 10000;
 
 
 
@@ -53,7 +58,8 @@ t = (0:(N_PTS-1))'/FS;
 
 % Initial impulse response
 t_h = (0:(H_SIZE-1))'/H_SIZE;
-h = exp(-6*(0:(H_SIZE-1))'/H_SIZE).*sin(2*pi*8*t_h);
+%h = exp(-6*(0:(H_SIZE-1))'/H_SIZE).*sin(2*pi*1*t_h);
+h = exp(-6*(0:(H_SIZE-1))'/H_SIZE);
 
 % Determine location of the spectral peaks
 peakLoc = zeros(N_PEAKS, 1);
@@ -77,22 +83,75 @@ for n = 1:N_PEAKS
   peakLoc(n) = u;
 end
 
+
+% =============================================================================
+% REFERENCE SPECTRUM
+% =============================================================================
+
 % Generate signal
 x = impulseOsc(N_PTS, F0, FS, h);
-plot(x)
-grid minor
-
 
 
 s = abs(fft(x,FFT_SIZE));
 s = s(1:(FFT_SIZE/2));
 
-sAtPeak = s(round(peakLoc)+1);
+sRefAtPeaks = s(round(peakLoc)+1);
 
-figure
-sFreq = (0:((FFT_SIZE/2)-1)).';
-plot(sFreq, 20*log10(s), peakLoc, 20*log10(sAtPeak), 'r+')
-grid minor
+
+
+
+% =============================================================================
+% TWEAK LOOP
+% =============================================================================
+zzMax = Inf;
+for n = 1:N_ITER
+
+  % Tweak the impulse response
+  hNew = h + (1e-1)*(-1 + 2*rand(H_SIZE, 1));
+
+  % Generate signal
+  x = impulseOsc(N_PTS, F0, FS, hNew);
+  
+
+  s = abs(fft(x,FFT_SIZE));
+  s = s(1:(FFT_SIZE/2));
+
+  sAtPeaks = s(round(peakLoc)+1);
+
+
+  if (max(abs(sAtPeaks(1:80) - sRefAtPeaks(1:80))) < 1) 
+    
+    zz = sAtPeaks(81:end) - sRefAtPeaks(81:end);
+    if (sum(abs(zz)) < zzMax)
+    %if 1
+
+      sFreq = (0:((FFT_SIZE/2)-1)).';
+      subplot(1,2,1)
+      plot(sFreq, 20*log10(s), peakLoc(1:80), 20*log10(sAtPeaks(1:80)), 'r+', peakLoc(1:80), 20*log10(sRefAtPeaks(1:80)), 'k+')
+      grid minor
+      ylim([-60 70])
+      title(sprintf('n = %d', n))
+      
+      subplot(1,2,2)
+      plot(x)
+      xlim([1 300])
+      ylim([0 1])
+  
+      pause(0.01)
+  
+      h = hNew;
+      zzMax = sum(abs(zz));
+    else
+      fprintf('sum = %0.8f, record = %0.8f\n', sum(abs(zz)), zzMax)
+    end
+
+    
+  end
+
+end
+
+
+
 
 
 
