@@ -12,11 +12,9 @@
 
 % PURPOSE
 % TODO!
-
-
-
-clc
+clear all
 close all
+clc
 
 
 
@@ -26,12 +24,12 @@ close all
 
 % Signal properties
 FS = 48000;
-F0 = 101;
+F0 = 100.1;
 N_PTS = 50000;
 
 % Haar basis settings
-W_SIZE = 32;
-W_SUB_SIZE = 8;
+W_SIZE = 128;
+W_SUB_SIZE = 16;
 
 % FFT analysis settings
 FFT_SIZE = 262144;
@@ -56,23 +54,23 @@ t = (0:(N_PTS-1))'/FS;
 nBrk = length(brk);
 
 % Generate the list of step size
-step = logspace(-7, -8, N_TARGET);
+step = logspace(-4, -8, N_TARGET);
 
-% Generate the list of expected peak location
+% Generate the list of expected peak location (expressed in normalised frequency)
 peaksFreq = zeros(N_PEAKS, 1);
 firstAlias = true;
 nAlias = -1;
 for n = 1:N_PEAKS
   u = (2*n-1)*F0*FFT_SIZE/FS;
   
-  while ((u > ((FFT_SIZE/2)-1)) || (u < 0))
-    if (u > ((FFT_SIZE/2)-1))
+  while ((u > (FFT_SIZE/2)) || (u < 0))
+    if (u > (FFT_SIZE/2))
       if firstAlias
         fprintf('[INFO] First aliased peak at index %d.\n', n);
         firstAlias = false;
         nAlias = n;
       end
-      u = FFT_SIZE-2 - u;
+      u = FFT_SIZE - u;
     end
 
     if (u < 0)
@@ -81,6 +79,7 @@ for n = 1:N_PEAKS
   end
   peaksFreq(n) = u;
 end
+% TODO: use interp1 instead when evaluating s(peaksIndices)
 peaksIndices = round(peaksFreq)+1;
 
 if (nAlias == -1)
@@ -94,8 +93,8 @@ sRef = s(1:(FFT_SIZE/2), :);
 % Calculate the energy reference
 sigEnerg = sum(x.^2);
 
-rangeUAS = 1:nAlias;
-rangeAS = (nAlias+1):N_PEAKS;
+rangeUAS = 1:(nAlias-1);
+rangeAS = nAlias:N_PEAKS;
 
 
 
@@ -104,7 +103,7 @@ rangeAS = (nAlias+1):N_PEAKS;
 % =============================================================================
 eMax = Inf;
 n = 0;
-figure('units','normalized','outerposition',[0 0 1 1])
+figure('units','normalized','outerposition', [0 0 1 1])
 while (n < N_TARGET)
 
   % Copy the signal
@@ -130,18 +129,19 @@ while (n < N_TARGET)
   
   % Calculate amplitude deviation in the aliased part of the spectrum (AS)
   errAS = abs(s(peaksIndices(rangeUAS)) - sRef(peaksIndices(rangeUAS)));
-  
+  energAS = sum(s(peaksIndices(rangeAS)).^2);
+
   % Test the criterias
   test1 = max(errNAS) < 1e-3;
-  test2 = sum(errAS.^2) < eMax;
+  test2 = energAS < eMax;
   test3 = sum(xMod.^2) < sigEnerg;
-  test1 = true;
+  %test1 = true;
   %test3 = true;
   
   if (test1 && test2 && test3)
     
     % Store the new aliased energy
-    eMax = sum(errAS.^2);
+    eMax = energAS;
     %fprintf('[INFO] e = %0.2f\n', e)
     
     % Store the new solution
