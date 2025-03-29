@@ -35,11 +35,14 @@ W_SUB_SIZE = 16;
 FFT_SIZE = 262144;
 
 % Number of spectral peaks considered for the iteration
-N_PEAKS = 200;
+N_PEAKS = 150;
 
 % Required number of solutions before stopping the script
 N_TARGET = 10000;
 
+
+FIRST_STEP_SIZE_POW10 = -2;
+LAST_STEP_SIZE_POW10 = -5;
 
 
 % =============================================================================
@@ -54,7 +57,7 @@ t = (0:(N_PTS-1))'/FS;
 nBrk = length(brk);
 
 % Generate the list of step size
-step = logspace(-4, -8, N_TARGET);
+step = logspace(FIRST_STEP_SIZE_POW10, LAST_STEP_SIZE_POW10, N_TARGET);
 
 % Generate the list of expected peak location (expressed in normalised frequency)
 peaksFreq = zeros(N_PEAKS, 1);
@@ -113,7 +116,8 @@ while (n < N_TARGET)
   delta = (H.')*[step(n+1)*(-1 + 2*rand(W_SUB_SIZE, 1)); zeros(W_SIZE-W_SUB_SIZE, 1)];
   
   % Draw a random transition
-  idx = randi([1, nBrk-1]);
+  %idx = randi([1, nBrk-1]);
+  idx = randi([1, 20]);
 
   % Apply the wiggle to the neighborhood of the transition
   a = brk(idx) - W_SIZE/2 + 1;
@@ -132,17 +136,19 @@ while (n < N_TARGET)
   energAS = sum(s(peaksIndices(rangeAS)).^2);
 
   % Test the criterias
-  test1 = max(errNAS) < 1e-3;
+  test1 = max(errNAS) < 0.5;
   test2 = energAS < eMax;
   test3 = sum(xMod.^2) < sigEnerg;
   %test1 = true;
   %test3 = true;
+  %fprintf('max errNAS: %0.4f (target: 0.1)\n', max(errNAS));
+  %fprintf('max energ: %0.4f (target: %0.4f)\n', sum(xMod.^2), sigEnerg);
+  %fprintf('\n');
   
   if (test1 && test2 && test3)
     
     % Store the new aliased energy
     eMax = energAS;
-    %fprintf('[INFO] e = %0.2f\n', e)
     
     % Store the new solution
     x = xMod;
@@ -150,9 +156,15 @@ while (n < N_TARGET)
     
     subplot(1,2,1)
     fPlot = (0:((FFT_SIZE/2)-1))';
-    plot(fPlot, 20*log10(s), peaksFreq(rangeUAS), 20*log10(s(peaksIndices(rangeUAS))), 'r+', peaksFreq(rangeAS), 20*log10(s(peaksIndices(rangeAS))), 'k+')
+    plot(fPlot, 20*log10(s), ...
+         peaksFreq(rangeUAS), 20*log10(s(peaksIndices(rangeUAS))), 'r+', ...
+         peaksFreq(rangeAS), 20*log10(s(peaksIndices(rangeAS))), 'k+', ...
+         peaksFreq(rangeAS), 20*log10(sRef(peaksIndices(rangeAS))), 'b+'...
+       )
     grid minor
-    ylim([-60 100])
+    %ylim([-60 100])
+    ylim([25 60])
+    xlim([0.9e5 1.3e5])
     title(sprintf('Solution %d/%d', n, N_TARGET))
 
     subplot(1,2,2)

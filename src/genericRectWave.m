@@ -34,17 +34,38 @@ function [s, brk, brkFine] = genericRectWave(nPts, period, dutyRatio, highLevels
   s = zeros(nPts,1);
   brk = []; brkFine = []; brkCount = 0; brkLast = 0;
   
+  nHighLevels = length(highLevels);
+  highLevelsPtr = 1;
+  
+  nLowLevels = length(lowLevels);
+  lowLevelsPtr = 1;
+  
   state = -1;
   t = 0;
   while (t < (nPts-1))
     
     if (state == -1)
       t = t + (dutyRatio*period);  
-      s((brkLast+1):floor(t)) = -1;
+      s((brkLast+1):floor(t)) = lowLevels(lowLevelsPtr);
+      
+      if (lowLevelsPtr == nLowLevels)
+        lowLevelsPtr = 1;
+      else
+        lowLevelsPtr = lowLevelsPtr + 1;
+      end
+      
       state = 1;
+      
     elseif (state == 1)
       t = t + ((1.0-dutyRatio)*period);
-      s((brkLast+1):floor(t)) = 1;
+      s((brkLast+1):floor(t)) = highLevels(highLevelsPtr);
+      
+      if (highLevelsPtr == nHighLevels)
+        highLevelsPtr = 1;
+      else
+        highLevelsPtr = highLevelsPtr + 1;
+      end
+      
       state = -1;
     end
   
