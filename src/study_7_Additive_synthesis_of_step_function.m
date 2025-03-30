@@ -11,7 +11,13 @@
 % =============================================================================
 
 % PURPOSE
-% TODO!
+% Consider a step signal (or any signal with a major discontinuity).
+% First step: calculate the theoretical 'perfect' alias-free version of this 
+% broken signal (using additive synthesis)
+% Then: show an animation of the spectrum as the signal morphs from the
+% naive version to this ideal version.
+
+
 clear all
 close all
 clc
@@ -27,59 +33,86 @@ FS = 48000;
 F0 = 100.1;
 N_PER = 10.4;
 
-% Haar basis settings
-W_SIZE = 128;
-W_SUB_SIZE = 16;
-
 % FFT analysis settings
 FFT_SIZE = 262144;
 
-% Number of spectral peaks considered for the iteration
-N_PEAKS = 150;
+% Maximum frequency component in the additive synthesis
+F_MAX = 3000;
 
-% Required number of solutions before stopping the script
-N_TARGET = 10000;
-
-
-F_MAX = 10000;
-
-FIRST_STEP_SIZE_POW10 = -2;
-LAST_STEP_SIZE_POW10 = -5;
+% Number of steps for the morphing
+N_STEPS = 500;
 
 
 % =============================================================================
-% PRELIMINARY VARIABLES
+% SIGNAL GENERATION
 % =============================================================================
-
 nPts = round(N_PER*FS/F0);
 
 % Generate signal
 t = (0:(nPts-1))'/FS;
-%[x, brk] = oscSquare(t, 0.5, F0);
-[x, brk] = oscStep(t, F0, 0.5, [1, 0.5, 1.5], [-1, -0.5, -1.5]);
-nBrk = length(brk);
+[x, brk] = oscStep(t, F0, 0.5, [1, 0.8, 1.2], [-1, -0.8, -1.2]);
+
+%phi = 2*pi*F0*t;
+%phi(round(nPts/3):end) = phi(round(nPts/3):end) - 0.5;
+%x = sin(phi);
 
 
-nTerms = floor(F_MAX/F0);
+
+% =============================================================================
+% ADDITIVE SYNTHESIS
+% =============================================================================
+startFreq = F0/10;
+nTerms = floor(F_MAX/startFreq);
 M = zeros(nPts, 2*nTerms);
-Msin = sin(2*pi*F0*t*(0:(nTerms-1)));
-Mcos = cos(2*pi*F0*t*(0:(nTerms-1)));
+Msin = sin(2*pi*startFreq*t*(0:(nTerms-1)));
+Mcos = cos(2*pi*startFreq*t*(0:(nTerms-1)));
 
 M(:, 1:2:end) = Msin;
 M(:, 2:2:end) = Mcos;
+
+% Remove the 'sin' term at null frequency (vector is all 0)
 Minv = M(:, 2:end);
 
 s = Minv\x;
 s = [0; s];
 
-plot([s(1:2:end), s(2:2:end)])
+stem([s(1:2:end), s(2:2:end)])
+grid minor
 
 xRec = M*s;
-plot([x, xRec])
+plot(t, [x, xRec])
 ylim([-2 2])
+legend('original', 'reconstructed')
+grid minor
 
-s = abs(fft(xRec, FFT_SIZE));
+s = abs(fft(x, FFT_SIZE));
 s = s(1:(FFT_SIZE/2));
 plot(20*log10(s))
 
 
+% =============================================================================
+% MORPH
+% =============================================================================
+lambda = linspace(0, 1, N_STEPS);
+figure('units','normalized','outerposition', [0 0 1 1])
+for n = 1:N_STEPS
+
+  xM = (1-lambda(n))*x + lambda(n)*xRec;
+  
+  s = abs(fft(xM, FFT_SIZE));
+  s = s(1:(FFT_SIZE/2));
+  
+  subplot(1,2,1)
+  plot(20*log10(s))
+  title(sprintf('n = %d', n))
+  xlim([0 30000])
+  ylim([0 70])
+
+  subplot(1,2,2)
+  plot(xM)
+  xlim([0 750])
+  ylim([-1.2 1.2])
+
+  pause(0.00001)
+  
+end
