@@ -1,11 +1,11 @@
 % =============================================================================
 % Project       : digitalWaveformSynthesis
 % Module name   : N/A
-% File name     : study_4_Stochastic_optimisation_III.m
+% File name     : study_7_Additive_synthesis_of_step_function.m
 % File type     : Matlab script
-% Purpose       : study 4 - use noise to announce the discontinuity
+% Purpose       : TODO
 % Author        : QuBi (nitrogenium@outlook.fr)
-% Creation date : Sunday, 23 March 2025
+% Creation date : Sunday, 30 March 2025
 % -----------------------------------------------------------------------------
 % Best viewed with space indentation (2 spaces)
 % =============================================================================
